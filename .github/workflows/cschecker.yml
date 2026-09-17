@@ -37,6 +37,7 @@ jobs:
           NOTIFY_EMAIL: ${{ secrets.NOTIFY_EMAIL }}
           TEST_EMAIL: ${{ inputs.test_email }}
           HEARTBEAT: ${{ github.event.schedule == '0 0 * * 1' }}
+          REPO_URL: ${{ github.server_url }}/${{ github.repository }}
         run: python cschecker.py
 
       - name: Commit state snapshot

@@ -12,7 +12,7 @@ from bs4 import BeautifulSoup
 STATE_DIR = Path(__file__).parent / "state"
 STATE_DIR.mkdir(exist_ok=True)
 
-REPO_ACTIONS_URL = "https://github.com/owdmm/CSChecker/actions"
+REPO_ACTIONS_URL = os.environ.get("REPO_URL", "") + "/actions"
 
 FAIL_THRESHOLD = 3
 
