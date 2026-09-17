@@ -1,0 +1,49 @@
+name: Site Watcher
+
+on:
+  schedule:
+    - cron: "*/5 * * * *"
+    - cron: "0 0 * * 1"
+  workflow_dispatch:
+    inputs:
+      test_email:
+        description: "send a test email only"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: site-watcher
+  cancel-in-progress: false
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - run: pip install -r requirements.txt
+
+      - name: Run checker
+        env:
+          GMAIL_ADDRESS: ${{ secrets.GMAIL_ADDRESS }}
+          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+          NOTIFY_EMAIL: ${{ secrets.NOTIFY_EMAIL }}
+          TEST_EMAIL: ${{ inputs.test_email }}
+          HEARTBEAT: ${{ github.event.schedule == '0 0 * * 1' }}
+        run: python checker.py
+
+      - name: Commit state snapshot
+        if: always()
+        run: |
+          git config user.name "watcher-bot"
+          git config user.email "owdmm@users.noreply.github.com"
+          git add state/
+          git diff --cached --quiet || git commit -m "update state"
+          git push
