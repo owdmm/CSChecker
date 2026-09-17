@@ -10,6 +10,10 @@ on:
         description: "send a test email only"
         type: boolean
         default: false
+      test_heartbeat:
+        description: "force-send the weekly heartbeat email"
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -36,7 +40,8 @@ jobs:
           GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
           NOTIFY_EMAIL: ${{ secrets.NOTIFY_EMAIL }}
           TEST_EMAIL: ${{ inputs.test_email }}
-          HEARTBEAT: ${{ github.event.schedule == '0 0 * * 1' }}
+          TEST_HEARTBEAT: ${{ inputs.test_heartbeat }}
+          SCHEDULE: ${{ github.event.schedule }}
           REPO_URL: ${{ github.server_url }}/${{ github.repository }}
         run: python cschecker.py
 

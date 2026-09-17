@@ -196,7 +196,8 @@ def main() -> None:
         datetime.datetime.now(datetime.timezone.utc).isoformat(), encoding="utf-8"
     )
 
-    if os.environ.get("HEARTBEAT") == "true":
+    is_heartbeat_schedule = os.environ.get("SCHEDULE") == "0 0 * * 1"
+    if is_heartbeat_schedule or os.environ.get("TEST_HEARTBEAT") == "true":
         send_heartbeat(critical_failures)
 
     print("any_change:", any_change, "critical_failures:", critical_failures)
