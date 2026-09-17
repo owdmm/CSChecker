@@ -29,20 +29,11 @@ TARGETS = [
         "key": "site_a",
         "url": "https://www.kooza.jp/outline-osaka.html",
         "label": "対象ページA",
-        "mode": "full_text",
     },
     {
         "key": "site_b",
         "url": "https://www.kooza.jp/",
         "label": "対象ページB",
-        "mode": "full_text",
-    },
-    {
-        "key": "site_c",
-        "url": "https://www.instagram.com/cirquedusoleil.jp/",
-        "label": "対象ページC",
-        "mode": "og_description",
-        "best_effort": True,
     },
 ]
 
@@ -55,12 +46,6 @@ def extract_full_text(content: bytes) -> str:
         tag.decompose()
     lines = [l.strip() for l in soup.get_text("\n").splitlines()]
     return "\n".join(l for l in lines if l)
-
-
-def extract_og_description(content: bytes) -> str:
-    soup = BeautifulSoup(content, "html.parser")
-    tag = soup.find("meta", property="og:description")
-    return tag.get("content", "").strip() if tag else ""
 
 
 def fetch(url: str) -> bytes:
@@ -103,23 +88,18 @@ def set_failcount(key: str, n: int) -> None:
 def check_target(target: dict) -> tuple[bool, bool]:
     """Returns (content_changed, is_failing)."""
     state_file = STATE_DIR / f"{target['key']}.txt"
-    critical = not target.get("best_effort")
     fail_count = get_failcount(target["key"])
 
     try:
         raw = fetch(target["url"])
-        text = (
-            extract_og_description(raw)
-            if target["mode"] == "og_description"
-            else extract_full_text(raw)
-        )
+        text = extract_full_text(raw)
         if not text:
             raise ValueError("extracted text is empty")
     except Exception as exc:  # noqa: BLE001
         print(f"[WARN] fetch/parse failed for {target['key']}: {safe_error_summary(exc)}")
         fail_count += 1
         set_failcount(target["key"], fail_count)
-        if critical and fail_count == FAIL_THRESHOLD:
+        if fail_count == FAIL_THRESHOLD:
             send_mail(
                 f"⚠️ {target['label']} の取得エラーが続いています",
                 f"{target['label']} ({target['url']}) の取得に{FAIL_THRESHOLD}回連続で失敗しました。\n\n"
@@ -127,9 +107,9 @@ def check_target(target: dict) -> tuple[bool, bool]:
                 f"実行ログを確認してください: {REPO_ACTIONS_URL}\n",
             )
             print(f"[ALERT] {target['key']} failure alert sent")
-        return False, critical
+        return False, True
 
-    if critical and fail_count >= FAIL_THRESHOLD:
+    if fail_count >= FAIL_THRESHOLD:
         send_mail(
             f"✅ {target['label']} が復旧しました",
             f"{target['label']} ({target['url']}) の取得が正常に戻りました。\n",
@@ -209,8 +189,7 @@ def main() -> None:
                 critical_failures.append(target["key"])
         except Exception as exc:  # noqa: BLE001
             print(f"[ERROR] {target['key']}: {exc}")
-            if not target.get("best_effort"):
-                critical_failures.append(target["key"])
+            critical_failures.append(target["key"])
 
     # keeps the repo "active" so GitHub doesn't auto-disable the schedule after 60 idle days
     (STATE_DIR / "last_checked.txt").write_text(
