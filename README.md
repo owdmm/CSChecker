@@ -1,4 +1,4 @@
-# site-watcher
+# CSChecker
 
 ## Secrets
 
@@ -8,4 +8,4 @@
 
 ## Manual run
 
-Actions → Site Watcher → Run workflow (`test_email` for a dry run).
+Actions → CSChecker → Run workflow (`test_email` for a dry run).
