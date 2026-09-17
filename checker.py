@@ -84,6 +84,13 @@ def send_mail(subject: str, body: str) -> None:
         server.sendmail(sender, [to_addr], msg.as_string())
 
 
+def safe_error_summary(exc: Exception) -> str:
+    """Error summary for public logs: no URLs or response bodies that could name the target."""
+    if isinstance(exc, requests.HTTPError) and exc.response is not None:
+        return f"HTTP {exc.response.status_code}"
+    return type(exc).__name__
+
+
 def get_failcount(key: str) -> int:
     f = STATE_DIR / f"{key}.failcount"
     return int(f.read_text()) if f.exists() else 0
@@ -109,7 +116,7 @@ def check_target(target: dict) -> tuple[bool, bool]:
         if not text:
             raise ValueError("extracted text is empty")
     except Exception as exc:  # noqa: BLE001
-        print(f"[WARN] fetch/parse failed for {target['key']}: {exc}")
+        print(f"[WARN] fetch/parse failed for {target['key']}: {safe_error_summary(exc)}")
         fail_count += 1
         set_failcount(target["key"], fail_count)
         if critical and fail_count == FAIL_THRESHOLD:
