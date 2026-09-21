@@ -166,7 +166,7 @@ def send_heartbeat(critical_failures: list[str]) -> None:
         "このメールが来なくなった場合は、実行が止まっている可能性があるので、\n"
         f"リポジトリのActionsタブを確認してください: {REPO_ACTIONS_URL}\n"
     )
-    send_mail("📅 週次の生存確認", body)
+    send_mail("📅 [CSChecker] 週次の生存確認", body)
     print("[HEARTBEAT] sent")
 
 
